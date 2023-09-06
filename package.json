@@ -1,0 +1,20 @@
+{
+  "name": "axios-streaming-timeout",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:n0th1ng-else/axios-streaming-timeout.git"
+  },
+  "dependencies": {
+    "axios": "1.5.0",
+    "express": "^4.18.2"
+  },
+  "author": "Sergey Nikitin",
+  "license": "ISC",
+  "type": "module"
+}
