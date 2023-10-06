@@ -3,8 +3,8 @@ import axios from "axios"
 import express from "express";
 
 const PORT = 3000;
-const CHUNK_COUNT = 20; // equal to 20sec of request time, each chunk simulates 1sec
-const AXIOS_TIMEOUT = 5000; // we have timeout eq to 5sec lets say
+const CHUNK_COUNT = 10; // equal to 10sec of request time, each chunk simulates 1sec
+const AXIOS_TIMEOUT = 5_000; // we have timeout eq to 5sec lets say
 
 const sleepFor = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 
@@ -33,7 +33,7 @@ app.post("/chunk", (req, res) => {
             return Promise.resolve();
         }
         return sleepFor(1_000).then(() => {
-            console.log('Keep sending chunks', 20 - chunks.length, 's')
+            console.log(`Keep sending chunks ${CHUNK_COUNT - chunks.length}s`)
             res.write(JSON.stringify({ foo: "bar" }) + "\r\n");
             return sendChunks(chunks)
         })
@@ -44,13 +44,19 @@ app.post("/chunk", (req, res) => {
 
 const server = createHttp(app)
 
-const sendRequest = (url) => {
+const sendRequest = (url, withSignal = false) => {
     const start = new Date().getTime()
     console.log(url, 'Start request')
+
+    const extra = withSignal ? {
+        signal: AbortSignal.timeout(AXIOS_TIMEOUT)
+    } : {}
+
     return axios.request({
         method: "POST",
         url,
         timeout: AXIOS_TIMEOUT,
+        ...extra
     })
         .then(() => {
             console.log(url, 'Request was successful')
@@ -60,7 +66,11 @@ const sendRequest = (url) => {
         })
         .finally(() => {
             const end = new Date().getTime()
-            console.log(url, 'Request took', Math.floor((end-start) / 1000), 's\n\n')
+            console.log(
+                url,
+                `Request took ${Math.floor((end-start) / 1_000)}s`,
+                `should be ${Math.floor(AXIOS_TIMEOUT / 1_000)}s!\n\n`
+            )
         })
 }
 
@@ -68,6 +78,12 @@ server.listen(PORT, async () => {
     const url = `http://localhost:3000`
     console.log('server is running', url)
 
+    console.log('>> Usual request')
     await sendRequest(`${url}/regular`)
+
+    console.log('>> Chunked request')
     await sendRequest(`${url}/chunk`)
+
+    console.log('>> Chunked request with AbortSignal')
+    await sendRequest(`${url}/chunk`, true)
 })
